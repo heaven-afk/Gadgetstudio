@@ -15,7 +15,7 @@ Standalone Next.js app prepared for Vercel, with Supabase email/password authent
 
 Use Node.js 24 and npm. Run `npm ci`, copy `.env.example` to `.env.local`, supply the project configuration, then `npm run dev`. Without Supabase configuration, the homepage and demo work, while account forms show a setup message and protected functionality fails closed. There is no fake sign-in or browser-local replacement database.
 
-Read [DEPLOYMENT.md](DEPLOYMENT.md) for Supabase, email, Vercel, testing and backup setup.
+Read [the deployment guide](docs/deployment.md) for Supabase, email, Vercel, testing and backup setup.
 
 ## Checks
 
@@ -28,14 +28,16 @@ Tests cover tenant permissions, CSRF, authoritative prices, stale edits, order/s
 
 The test database stubs only the Supabase-managed `auth.users` and `storage.buckets` schemas; hosted Auth email delivery, real Storage policies and the real pooler still require project-level checks before launch.
 
+Read [the source map and design notes](docs/architecture.md) before changing business flows. Run `npm run format` to format source and `npm run format:check` to check formatting. CI enforces the same convention.
+
 ## Architecture
 
-- `lib/api.mjs`: server-only use of the existing tested order, inventory and swap logic.
-- `lib/database.mjs`: parameterised PostgreSQL adapter with transactional batches.
-- `lib/database-server.ts`: server-only connection to Supabase's transaction pooler, prepared statements disabled.
+- `src/server/api/`: server-only use of the existing tested order, inventory and swap logic.
+- `src/lib/database.mjs`: parameterised PostgreSQL adapter with transactional batches.
+- `src/lib/database-server.ts`: server-only connection to Supabase's transaction pooler, prepared statements disabled.
 - `supabase/migrations/202610220001_platform.sql`: business tables, constraints, atomic stock triggers, direct-access restrictions, and private photo buckets.
-- `lib/supabase/server.ts`, `proxy.ts`: cookie sessions and independently verified identities. No authentication headers from callers are trusted.
-- `lib/supabase/storage.ts`: server-side image uploads/downloads. Trade-in photos require store ownership before they are served.
+- `src/lib/supabase/server.ts`, `src/proxy.ts`: cookie sessions and independently verified identities. No authentication headers from callers are trusted.
+- `src/lib/supabase/storage.ts`: server-side image uploads/downloads. Trade-in photos require store ownership before they are served.
 
 Business-table access is revoked from Supabase's `anon` and `authenticated` roles and RLS is enabled. All business queries go through server APIs that verify seller ownership. Database credentials and the Supabase secret key must never be browser-exposed. Product and request IDs are unguessable UUIDs, but IDs are not treated as authorization.
 

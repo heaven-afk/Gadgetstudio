@@ -1,0 +1,171 @@
+'use client';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+type Mode = 'sign-in' | 'sign-up' | 'forgot-password' | 'update-password';
+export function AuthForm({ mode, ready }: { mode: Mode; ready: boolean }) {
+  const [busy, setBusy] = useState(false),
+    [message, setMessage] = useState(''),
+    [error, setError] = useState('');
+  useEffect(() => {
+    if (
+      new URLSearchParams(window.location.search).get('error') ===
+      'link-expired'
+    )
+      setError(
+        'This link has expired or is invalid. Request a new confirmation or recovery email.',
+      );
+  }, []);
+  const signup = mode === 'sign-up',
+    reset = mode === 'forgot-password',
+    update = mode === 'update-password';
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+    setMessage('');
+    const data = Object.fromEntries(new FormData(e.currentTarget));
+    try {
+      const response = await fetch('/api/auth/' + mode, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Please try again.');
+      if (result.redirect) window.location.assign(result.redirect);
+      else setMessage(result.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="auth-card">
+      <span className="eyebrow">
+        {signup
+          ? 'YOUR BUSINESS. YOUR OWN SPACE.'
+          : reset
+            ? 'LET’S GET YOU BACK IN.'
+            : update
+              ? 'A FRESH START.'
+              : 'GOOD TO HAVE YOU BACK.'}
+      </span>
+      <h1>
+        {signup ? (
+          <>
+            Your next chapter
+            <br />
+            starts <em>here.</em>
+          </>
+        ) : reset ? (
+          <>
+            Forgot your
+            <br />
+            <em>password?</em>
+          </>
+        ) : update ? (
+          <>
+            Make it
+            <br />
+            <em>secure.</em>
+          </>
+        ) : (
+          <>
+            Welcome to
+            <br />
+            your <em>studio.</em>
+          </>
+        )}
+      </h1>
+      <p>
+        {signup
+          ? 'Create a seller account, then set up your own gadget storefront.'
+          : reset
+            ? 'We’ll send a recovery link if an account exists for that email.'
+            : update
+              ? 'Choose a new password for your seller account.'
+              : 'Sign in to manage your gadgets, inventory, orders and swaps.'}
+      </p>
+      {!ready && (
+        <div className="setup-note">
+          Seller accounts are not connected yet. Supabase configuration is
+          required before registration or sign-in can work.
+        </div>
+      )}
+      <form onSubmit={submit}>
+        {signup && (
+          <label>
+            Your name
+            <input name="name" autoComplete="name" required maxLength={100} />
+          </label>
+        )}
+        {!update && (
+          <label>
+            Email address
+            <input
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              maxLength={254}
+            />
+          </label>
+        )}
+        {!reset && (
+          <label>
+            {update ? 'New password' : 'Password'}
+            <input
+              name="password"
+              type="password"
+              autoComplete={
+                signup || update ? 'new-password' : 'current-password'
+              }
+              required
+              minLength={signup || update ? 12 : 1}
+              maxLength={128}
+            />
+            {(signup || update) && <small>Use at least 12 characters.</small>}
+          </label>
+        )}
+        {error && (
+          <div className="form-error" role="alert">
+            {error}
+          </div>
+        )}
+        {message && (
+          <div className="form-success" role="status">
+            {message}
+          </div>
+        )}
+        <button
+          className="btn btn-orange"
+          disabled={busy || !ready}
+          type="submit"
+        >
+          {busy
+            ? 'One moment…'
+            : signup
+              ? 'Create seller account ↗'
+              : reset
+                ? 'Send recovery link ↗'
+                : update
+                  ? 'Save new password ↗'
+                  : 'Sign in ↗'}
+        </button>
+      </form>
+      <div className="auth-links">
+        {mode === 'sign-in' ? (
+          <>
+            <Link href="/forgot-password">Forgot password?</Link>
+            <span>
+              New here? <Link href="/sign-up">Create an account</Link>
+            </span>
+          </>
+        ) : (
+          <Link href="/sign-in">Back to sign in →</Link>
+        )}
+      </div>
+    </div>
+  );
+}

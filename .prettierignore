@@ -1,0 +1,6 @@
+node_modules
+.next
+screenshots
+package-lock.json
+next-env.d.ts
+tsconfig.tsbuildinfo

@@ -1,0 +1,28 @@
+export function configured() {
+  return !!(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  );
+}
+export function siteUrl() {
+  const value = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!value)
+    throw new Error(
+      'Set NEXT_PUBLIC_SITE_URL before connecting authentication.',
+    );
+  const url = new URL(value);
+  if (
+    url.protocol !== 'https:' &&
+    !(
+      process.env.NODE_ENV !== 'production' &&
+      ['localhost', '127.0.0.1'].includes(url.hostname)
+    )
+  )
+    throw new Error('Use an HTTPS site URL in production.');
+  return url.origin;
+}
+export function safeNext(value: string | null) {
+  return value && /^\/(dashboard|update-password)(?:[#?].*)?$/.test(value)
+    ? value
+    : '/dashboard';
+}
