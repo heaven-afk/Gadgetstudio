@@ -1,3 +1,5 @@
+import { ClerkProvider } from '@clerk/nextjs';
+import { configured } from '@/lib/config';
 import type { Metadata } from 'next';
 import './platform.css';
 export const metadata: Metadata = {
@@ -10,8 +12,21 @@ export const metadata: Metadata = {
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" data-scroll-behavior="smooth">
+      <body>
+        {configured() ? (
+          <ClerkProvider
+            signInUrl="/sign-in"
+            signUpUrl="/sign-up"
+            signInFallbackRedirectUrl="/dashboard"
+            signUpFallbackRedirectUrl="/dashboard"
+          >
+            {children}
+          </ClerkProvider>
+        ) : (
+          children
+        )}
+      </body>
     </html>
   );
 }

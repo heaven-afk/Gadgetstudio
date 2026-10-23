@@ -73,6 +73,14 @@ async function manage(db, id, user) {
   const s = await owned(db, id, user);
   return {
     ...(await catalogue(db, s, user)),
+    archivedProducts: (
+      await db
+        .prepare(
+          'SELECT * FROM products WHERE store_id=? AND active=0 ORDER BY created,id',
+        )
+        .bind(id)
+        .all()
+    ).results.map(productRow),
     requests: (
       await db
         .prepare(

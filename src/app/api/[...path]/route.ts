@@ -2,7 +2,7 @@ import { sameOrigin, externalRequest } from '@/lib/request-security';
 import { handleApi } from '@/server/api/index.mjs';
 import { database } from '@/lib/database-server';
 import { objectStorage } from '@/lib/supabase/storage';
-import { verifiedUser } from '@/lib/supabase/server';
+import { verifiedUser } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 30;

@@ -8,7 +8,6 @@ src/
     api/                   Auth and business API entry points
     auth/                  Email confirmation and callback routes
     dashboard/             Protected seller interface
-    demo/                  Explicitly labelled sample storefront
     s/[slug]/              One seller's public store
   components/              Shared account UI
   features/
@@ -29,7 +28,7 @@ src/
     rate-limit.mjs         Submission limits and fingerprints
     uploads.mjs            Photo validation
     whatsapp.mjs           Prepared customer messages
-  proxy.ts                 Supabase session refresh
+  proxy.ts                 Clerk session verification
 public/
   assets/                  Gadget illustrations and sample photos
   storefront/              Native browser modules and storefront styles
@@ -41,7 +40,7 @@ docs/                      Architecture and deployment instructions
 
 ## Request boundaries
 
-Next route adapters verify the session and request origin, then supply a database connection and object storage to the business API. The business layer accepts these dependencies explicitly, so tests exercise the same code against PostgreSQL without contacting a live seller database. Each store operation checks ownership; customers can submit requests without signing in.
+Next route adapters verify the Clerk session and request origin, then supply a database connection and object storage to the business API. The business layer accepts these dependencies explicitly, so tests exercise the same code against PostgreSQL without contacting a live seller database. Each store operation checks ownership; customers can submit requests without signing in.
 
 The business modules are JavaScript ES modules. The route adapters and React pages use TypeScript. The storefront still uses a standalone HTML shell and browser modules; this is intentional to preserve its current interactions during the migration. It is not a fully React-based storefront.
 
@@ -49,9 +48,9 @@ Browser modules share utilities through explicit imports. `studio.js` receives a
 
 ## Rendering and sample data
 
-The renderer reads `src/features/storefront/template.html`, injects escaped initial store JSON, and returns HTML. Next's file tracing configuration includes that template in server deployments. `/demo` explicitly invokes the renderer: Next's incoming Request must never become initial store data.
+The renderer reads `src/features/storefront/template.html`, injects escaped initial store JSON, and returns HTML. Next's file tracing configuration includes that template in server deployments. The public demo route has been removed; the renderer requires explicit initial data.
 
-Both the demo and optional seller sample catalogue use `src/features/catalog/sample-products.json`. Real `/s/[slug]` routes fetch that seller's catalogue and fail with an error when unavailable. They do not substitute sample listings. The dashboard uses the sample shell while it loads the signed-in seller's stores.
+The optional seller sample catalogue uses `src/features/catalog/sample-products.json`. Real `/s/[slug]` routes fetch that seller's catalogue and fail with an error when unavailable. They do not substitute sample listings. The dashboard is a React page that embeds the protected /dashboard/workspace document. That document starts with an empty catalogue and opens the seller workspace inline.
 
 The marketing homepage is composed from independent section components. Its global stylesheet is separate from the storefront stylesheet because the raw HTML storefront does not use the Next React layout.
 
@@ -71,6 +70,14 @@ Amounts are whole naira. Product prices and request totals must fit their databa
 4. Run `npm run build`, `npm run typecheck` and `npm run test:http`.
 5. For visual or interaction changes, open the local app and check desktop and mobile browsing, filtering, bag and swap flows.
 
-Type checking regenerates Next route types, including on a fresh checkout. The HTTP check runs an isolated built server with service credentials disabled and checks both setup states and storefront data delivery. Hosted email, pooler and actual Storage behavior still need the deployment acceptance checks.
+Type checking regenerates Next route types, including on a fresh checkout. The HTTP check runs an isolated built server with service credentials disabled and checks setup states and protected workspace access. Hosted email, pooler and actual Storage behavior still need the deployment acceptance checks.
 
 The old Sites prototype is a separate sibling project. Its SQLite migrations, Cloudflare bindings and identity provider are not dependencies of this app.
+
+## Clerk ownership migration
+
+Clerk account components are only mounted while signed out. Completing a login passes through `/auth/complete` and performs a full document navigation so the dashboard reads the new session rather than a prefetched signed-out response. If a configured dashboard cannot verify a session, it renders recovery controls without redirecting back into Clerk's signed-in account redirect. The workspace returns an explicit 401 instead of loading the sign-in widget inside its frame. Legacy account form CSS excludes `.clerk-account` to preserve Clerk's layout.
+
+The Next.js config preserves original Proxy URLs with `skipProxyUrlNormalize`. Clerk attaches session metadata through a same-origin rewrite; normalizing that URL to localhost on this Next.js runtime can stall local account requests. Development server logs belong outside `.next/` (use ignored `.local-runtime/`) to avoid Windows file locks during builds.
+
+202610230001_clerk_owners.sql converts stores.owner_id to text while preserving legacy IDs. Clerk user IDs are used directly for new stores. No email-based ownership reassignment or browser-provided identity is accepted. Supabase Auth is not used by the application; Supabase remains the PostgreSQL and private Storage provider.

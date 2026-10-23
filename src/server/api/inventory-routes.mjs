@@ -5,6 +5,18 @@ import { now, uid, owned } from './repository.mjs';
 export async function inventoryRoutes({ request, db, user, path, method, id }) {
   if (path[2] === 'products') {
     await owned(db, id, user);
+    if (method === 'POST' && path.length === 5 && path[4] === 'restore') {
+      const v = await body(request);
+      const changed = await db
+        .prepare(
+          'UPDATE products SET active=1,revision=revision+1 WHERE id=? AND store_id=? AND active=0 AND revision=?',
+        )
+        .bind(path[3], id, integer(v.revision, 1))
+        .run();
+      if (!changed.meta.changes)
+        fail(409, 'This listing changed elsewhere. Refresh before restoring.');
+      return json({ restored: true });
+    }
     if (method === 'POST' && path.length === 3) {
       const v = await body(request),
         data = product(v);

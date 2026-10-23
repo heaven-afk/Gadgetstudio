@@ -6,6 +6,7 @@ import { icon } from './icons.js';
 function hydrateIcons(root = document) {
   $$('[data-icon]', root).forEach((e) => (e.innerHTML = icon(e.dataset.icon)));
 }
+const isStudioPage = location.pathname.startsWith('/dashboard');
 const STORAGE_KEY = 'heaven-shopping-v2';
 const preferences = readPreferences(() => localStorage.getItem(STORAGE_KEY));
 function defaultState() {
@@ -30,7 +31,7 @@ let detail = { id: null, color: null, quantity: 1 },
   toastTimer,
   lastDraft = null,
   swapRequestKey = crypto.randomUUID();
-const { renderStudio } = createStudio({
+const { renderStudio, updateRequestFilters } = createStudio({
   store,
   getAccount: () => account,
   getManagedStores: () => managedStores,
@@ -84,8 +85,7 @@ async function loadStore(slug, { manage = false, navigate = true } = {}) {
   state = { activeStore: full.id, stores: [full] };
   checkoutValues = {};
   lastDraft = null;
-  if (navigate && location.pathname !== '/dashboard')
-    history.replaceState(null, '', '/s/' + s.slug);
+  if (navigate && !isStudioPage) history.replaceState(null, '', '/s/' + s.slug);
   clearFilters();
   refreshAll();
   return full;
@@ -110,15 +110,18 @@ async function initialise() {
     managedStores = me.stores;
     const slug = location.pathname.match(/^\/s\/([^/]+)/)?.[1];
     if (slug) await loadStore(decodeURIComponent(slug), { navigate: false });
-    else if (location.pathname === '/dashboard' && managedStores.length)
+    else if (isStudioPage && managedStores.length)
       await loadStore(managedStores[0].slug);
-    if (location.hash === '#studio' || location.pathname === '/dashboard')
-      await openStudio();
+    if (location.hash === '#studio' || isStudioPage) await openStudio();
   } catch (error) {
     if (location.pathname.startsWith('/s/')) {
       store().products = [];
       renderProducts();
       $('#result-count').textContent = 'Store unavailable';
+    }
+    if (isStudioPage) {
+      $('#studio-content').innerHTML =
+        `<div class="empty-state"><h3>Couldn’t load your workspace.</h3><p>${esc(error.message)}</p><button class="button dark" data-action="dashboard">Try again</button></div>`;
     }
     toast(error.message);
   }
@@ -336,7 +339,7 @@ function showRequestReady(result, kind) {
 }
 async function openStudio(tab = 'inventory') {
   studioTab = tab;
-  showDialog('dashboard-dialog');
+  if (!isStudioPage) showDialog('dashboard-dialog');
   $('#studio-content').innerHTML =
     '<div class="empty-state"><h3>Opening your studio…</h3></div>';
   try {
@@ -649,6 +652,17 @@ async function handleClick(e) {
     );
     return;
   }
+  const restore = e.target.closest('[data-restore]');
+  if (restore) {
+    const p = store().archivedProducts.find(
+      (p) => p.id === restore.dataset.restore,
+    );
+    showInfo(
+      'Restore this listing?',
+      `<p>${esc(p.name)} will return to your public catalogue at ${money(p.price)} with ${p.stock} units in stock.</p><form id="restore-form" data-product-id="${esc(p.id)}"><button class="button dark" type="submit">Restore listing</button></form>`,
+    );
+    return;
+  }
   const del = e.target.closest('[data-delete]');
   if (del) {
     const p = store().products.find((p) => p.id === del.dataset.delete);
@@ -693,21 +707,13 @@ async function handleClick(e) {
   }
   const rf = e.target.closest('[data-request-filter]');
   if (rf) {
-    $$('[data-request-filter]').forEach((b) =>
-      b.classList.toggle('active', b === rf),
-    );
-    $$('[data-request-kind]').forEach(
-      (card) =>
-        (card.hidden =
-          rf.dataset.requestFilter !== 'all' &&
-          card.dataset.requestKind !== rf.dataset.requestFilter),
-    );
+    updateRequestFilters({ kind: rf.dataset.requestFilter });
     return;
   }
   const action = e.target.closest('[data-action]')?.dataset.action;
   if (action === 'signout') {
     const result = await api('auth/signout', {});
-    location.assign(result.redirect);
+    window.top.location.assign(result.redirect);
     return;
   }
   if (action === 'swap') openSwap();
@@ -773,6 +779,7 @@ async function handleSubmit(e) {
       'complete-request-form',
       'record-sale-form',
       'archive-form',
+      'restore-form',
       'decline-form',
     ].includes(form.id)
   )
@@ -875,6 +882,17 @@ async function handleSubmit(e) {
       closeDialog('info-dialog');
       toast('Physical sale recorded. Stock updated.');
     }
+    if (form.id === 'restore-form') {
+      const p = store().archivedProducts.find(
+        (p) => p.id === form.dataset.productId,
+      );
+      await api(`stores/${store().id}/products/${p.id}/restore`, {
+        revision: p.revision,
+      });
+      await refreshServer();
+      closeDialog('info-dialog');
+      toast('Listing restored to your catalogue.');
+    }
     if (form.id === 'archive-form') {
       const p = store().products.find((p) => p.id === form.dataset.productId);
       await api(
@@ -908,6 +926,8 @@ document.addEventListener('submit', (e) => {
 });
 document.addEventListener('input', (e) => {
   e.target.setCustomValidity?.('');
+  if (e.target.id === 'request-search')
+    updateRequestFilters({ search: e.target.value });
   if (e.target.id === 'product-search') {
     filters.search = e.target.value;
     renderProducts();
@@ -925,6 +945,8 @@ document.addEventListener('input', (e) => {
   }
 });
 document.addEventListener('change', (e) => {
+  if (e.target.id === 'request-status')
+    updateRequestFilters({ status: e.target.value });
   if (e.target.id === 'condition-filter') {
     filters.condition = e.target.value;
     renderProducts();

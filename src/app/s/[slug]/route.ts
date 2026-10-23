@@ -1,7 +1,7 @@
 import { storefront } from '@/lib/storefront';
 import { database } from '@/lib/database-server';
 import { handleApi } from '@/server/api/index.mjs';
-import { verifiedUser } from '@/lib/supabase/server';
+import { verifiedUser } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export async function GET(

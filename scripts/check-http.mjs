@@ -4,6 +4,9 @@ import { spawn } from 'node:child_process';
 import assert from 'node:assert/strict';
 const env = {
   ...process.env,
+  NEXT_PUBLIC_SITE_URL: 'http://127.0.0.1:3100',
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: '',
+  CLERK_SECRET_KEY: '',
   NEXT_PUBLIC_SUPABASE_URL: '',
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: '',
   SUPABASE_SECRET_KEY: '',
@@ -50,18 +53,8 @@ try {
   assert(home.includes('/sign-up'));
   assert(!home.includes('ChatGPT'));
   r = await fetch(base + '/demo');
-  assert.equal(r.status, 200);
-  const demo = await r.text();
-  assert(demo.includes('swap-dialog'));
-  const initial = demo.match(/window\.__INITIAL_STORE__=(.*?);<\/script>/)?.[1];
-  assert(
-    initial,
-    'The demo must receive catalogue data, never the route Request object',
-  );
-  const catalogue = JSON.parse(initial);
-  assert.equal(catalogue.id, 'demo');
-  assert.equal(catalogue.sample, true);
-  assert(catalogue.products.length > 0);
+  assert.equal(r.status, 404);
+  assert(!home.includes('/demo'));
   for (const asset of [
     'index.js',
     'api.js',
@@ -82,9 +75,17 @@ try {
   ]) {
     r = await fetch(base + path);
     assert.equal(r.status, 200);
-    assert((await r.text()).includes('Seller accounts are not connected yet'));
+    const accountPage = await r.text();
+    assert(accountPage.includes('Seller accounts are not connected yet'));
+    assert(!accountPage.includes('Continue with Google'));
   }
   r = await fetch(base + '/dashboard', { redirect: 'manual' });
+  assert.equal(r.status, 307);
+  assert(r.headers.get('location').startsWith('/sign-in'));
+  r = await fetch(base + '/dashboard/workspace', { redirect: 'manual' });
+  assert.equal(r.status, 401);
+  assert.equal(r.headers.get('x-frame-options'), 'SAMEORIGIN');
+  r = await fetch(base + '/auth/complete', { redirect: 'manual' });
   assert.equal(r.status, 307);
   assert(r.headers.get('location').startsWith('/sign-in'));
   r = await fetch(base + '/s/unconfigured-store');
@@ -100,7 +101,7 @@ try {
       password: 'not-a-real-password',
     }),
   });
-  assert.equal(r.status, 503);
+  assert.equal(r.status, 404);
   r = await fetch(base + '/api/auth/sign-in', {
     method: 'POST',
     headers: {
@@ -110,6 +111,26 @@ try {
     body: '{}',
   });
   assert.equal(r.status, 403);
+  r = await fetch(base + '/api/auth/resend-confirmation', {
+    method: 'POST',
+    headers: { Origin: base, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'test@example.test' }),
+  });
+  assert.equal(r.status, 404);
+  r = await fetch(base + '/api/auth/resend-confirmation', {
+    method: 'POST',
+    headers: {
+      Origin: 'https://evil.test',
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  });
+  assert.equal(r.status, 403);
+  r = await fetch(base + '/auth/callback?error=access_denied', {
+    redirect: 'manual',
+  });
+  assert.equal(r.status, 307);
+  assert(r.headers.get('location').includes('notice=auth-migrated'));
   r = await fetch(base + '/api/auth/signout');
   assert.equal(r.status, 405);
   r = await fetch(base + '/storefront/index.js');
@@ -118,7 +139,7 @@ try {
   assert(!client.includes('signin-with-chatgpt'));
   assert(!client.includes('SUPABASE_SECRET_KEY'));
   console.log(
-    'PASS: built homepage/demo, account setup states, protected dashboard, no false storefronts, CSRF and POST-only sign-out.',
+    'PASS: built homepage, removed demo, account setup states, protected dashboard, no false storefronts, CSRF and POST-only sign-out.',
   );
 } finally {
   server.kill('SIGTERM');

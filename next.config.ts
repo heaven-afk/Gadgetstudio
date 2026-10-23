@@ -1,9 +1,12 @@
 import type { NextConfig } from 'next';
 const config: NextConfig = {
   poweredByHeader: false,
+  // Invalidate assets from the previous Supabase account UI after this migration.
+  deploymentId: process.env.VERCEL_GIT_COMMIT_SHA || 'clerk-accounts-v1',
+  // Clerk's session headers use a same-origin rewrite; preserve the browser URL.
+  skipProxyUrlNormalize: true,
   outputFileTracingIncludes: {
-    '/demo': ['./src/features/storefront/template.html'],
-    '/dashboard': ['./src/features/storefront/template.html'],
+    '/dashboard/workspace': ['./src/features/storefront/template.html'],
     '/s/*': ['./src/features/storefront/template.html'],
   },
   async headers() {
@@ -19,6 +22,10 @@ const config: NextConfig = {
             value: 'camera=(), microphone=(), geolocation=()',
           },
         ],
+      },
+      {
+        source: '/dashboard/workspace',
+        headers: [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }],
       },
     ];
   },

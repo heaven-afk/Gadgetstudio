@@ -7,7 +7,7 @@ export function SiteHeader() {
       </Link>
       <nav>
         <a href="#how">How it works</a>
-        <Link href="/demo">Explore a storefront ↗</Link>
+        <Link href="/sign-up">Create a storefront ↗</Link>
       </nav>
       <div className="nav-actions">
         <Link href="/sign-in">Sign in</Link>

@@ -2800,8 +2800,27 @@ dialog[open] {
 }
 .request-filters {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin: 25px 0;
+}
+.request-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 24px;
+}
+.request-tools label {
+  display: grid;
+  gap: 8px;
+  flex: 1 1 220px;
+  min-width: 0;
+  font-size: 12px;
+}
+.request-tools input,
+.request-tools select {
+  width: 100%;
+  min-width: 0;
 }
 .request-filters button {
   border: 1px solid var(--line);
@@ -3132,4 +3151,24 @@ dialog[open] {
   .studio-tabs button {
     flex-shrink: 0;
   }
+}
+.studio-page > .announcement,
+.studio-page > .header,
+.studio-page > main,
+.studio-page > footer {
+  display: none;
+}
+.studio-page #dashboard-dialog {
+  position: relative;
+  inset: auto;
+  display: block;
+  width: 100%;
+  max-width: 1400px;
+  max-height: none;
+  margin: 0 auto;
+  border: 0;
+  box-shadow: none;
+}
+.studio-page [data-close='dashboard-dialog'] {
+  display: none;
 }

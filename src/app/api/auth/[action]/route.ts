@@ -1,7 +1,6 @@
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { sameOrigin } from '@/lib/request-security';
-import { authClient } from '@/lib/supabase/server';
-import { configured, siteUrl } from '@/lib/config';
-import { ApiError, body } from '@/server/api/http.mjs';
+import { configured } from '@/lib/config';
 export const dynamic = 'force-dynamic';
 export async function POST(
   request: Request,
@@ -9,142 +8,31 @@ export async function POST(
 ) {
   if (!sameOrigin(request))
     return Response.json(
-      { error: 'Submit this form from this website.' },
+      { error: 'Submit this action from this website.' },
       { status: 403 },
+    );
+  const { action } = await params;
+  if (action !== 'signout')
+    return Response.json(
+      { error: 'Account forms are handled by Clerk. Open the sign-in page.' },
+      { status: 404 },
     );
   if (!configured())
     return Response.json(
       { error: 'Seller accounts are not connected yet.' },
       { status: 503 },
     );
-  const { action } = await params;
-  if (
-    ![
-      'signout',
-      'sign-in',
-      'sign-up',
-      'forgot-password',
-      'update-password',
-    ].includes(action)
-  )
-    return Response.json({ error: 'Unknown action.' }, { status: 404 });
   try {
-    const client = await authClient();
-    if (action === 'signout') {
-      const { error } = await client.auth.signOut();
-      if (error) throw error;
-      return Response.json({ redirect: '/sign-in' });
-    }
-    if (Number(request.headers.get('content-length') || 0) > 8192)
-      return Response.json({ error: 'Invalid form.' }, { status: 413 });
-    const value = await body(request, 8192);
-    const email =
-      typeof value.email === 'string' ? value.email.trim().toLowerCase() : '';
-    const password = typeof value.password === 'string' ? value.password : '';
-    if (
-      action !== 'update-password' &&
-      (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)
-    )
-      return Response.json(
-        { error: 'Enter a valid email address.' },
-        { status: 400 },
-      );
-    if (
-      action !== 'forgot-password' &&
-      (password.length > 128 ||
-        password.length < (action === 'sign-in' ? 1 : 12))
-    )
-      return Response.json(
-        { error: 'Use a password of 12–128 characters.' },
-        { status: 400 },
-      );
-    if (action === 'sign-in') {
-      const { error } = await client.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error)
-        return Response.json(
-          {
-            error:
-              'Could not sign in. Check your email and password, and confirm your email first.',
-          },
-          { status: 400 },
-        );
-      return Response.json({ redirect: '/dashboard' });
-    }
-    if (action === 'sign-up') {
-      const name = typeof value.name === 'string' ? value.name.trim() : '';
-      if (!name || name.length > 100)
-        return Response.json({ error: 'Enter your name.' }, { status: 400 });
-      const { error } = await client.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: name },
-          emailRedirectTo: siteUrl() + '/auth/callback',
-        },
-      });
-      if (error)
-        return Response.json(
-          {
-            error:
-              'Registration could not be completed. Check the details or try again later.',
-          },
-          { status: 400 },
-        );
-      return Response.json({
-        message:
-          'Check your email for a confirmation link. If you already have an account, sign in or reset your password.',
-      });
-    }
-    if (action === 'forgot-password') {
-      const { error } = await client.auth.resetPasswordForEmail(email, {
-        redirectTo: siteUrl() + '/auth/callback?next=/update-password',
-      });
-      if (error)
-        return Response.json(
-          {
-            error:
-              'Recovery is temporarily unavailable. Please try again later.',
-          },
-          { status: 429 },
-        );
-      return Response.json({
-        message:
-          'If an account exists, a recovery link will be sent. Check your inbox and spam folder.',
-      });
-    }
-    if (action === 'update-password') {
-      const {
-        data: { user },
-        error: identityError,
-      } = await client.auth.getUser();
-      if (identityError || !user)
-        return Response.json(
-          {
-            error:
-              'Open a valid recovery link or sign in before changing your password.',
-          },
-          { status: 401 },
-        );
-      const { error } = await client.auth.updateUser({ password });
-      if (error)
-        return Response.json(
-          {
-            error:
-              'The password could not be updated. Try a different password or a new recovery link.',
-          },
-          { status: 400 },
-        );
-      return Response.json({ redirect: '/dashboard' });
-    }
-    return Response.json({ error: 'Unknown action.' }, { status: 404 });
-  } catch (error) {
-    if (error instanceof ApiError)
-      return Response.json({ error: error.message }, { status: error.status });
+    const { sessionId } = await auth();
+    if (sessionId)
+      await (await clerkClient()).sessions.revokeSession(sessionId);
     return Response.json(
-      { error: 'Account services are unavailable. Please try again later.' },
+      { redirect: '/sign-in' },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
+  } catch {
+    return Response.json(
+      { error: 'Could not sign out. Please try again.' },
       { status: 503 },
     );
   }

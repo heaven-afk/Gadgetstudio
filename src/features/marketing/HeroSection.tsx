@@ -23,8 +23,8 @@ export function HeroSection() {
           <Link className="btn btn-orange" href="/sign-up">
             Let’s build your store <span>↗</span>
           </Link>
-          <Link className="quiet-link" href="/demo">
-            Take a look around →
+          <Link className="quiet-link" href="/sign-up">
+            Create your account →
           </Link>
         </div>
         <div className="hero-notes">
@@ -44,7 +44,7 @@ export function HeroSection() {
             <strong>
               heaven<span>.</span>
             </strong>
-            <small>A sample seller storefront</small>
+            <small>Your storefront. Your brand.</small>
             <span>♧</span>
           </div>
           <div className="mini-hero">
@@ -55,7 +55,7 @@ export function HeroSection() {
                 <br />
                 next <em>favourite.</em>
               </h2>
-              <Link href="/demo">Explore the collection ↗</Link>
+              <Link href="/sign-up">Create your collection ↗</Link>
             </div>
             <img
               src="/assets/hero.png"

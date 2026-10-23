@@ -13,8 +13,8 @@ export function SwapSection() {
           set the trade-in credit and agree any top-up before completing the
           swap.
         </p>
-        <Link className="btn btn-dark" href="/demo#swap-section">
-          Explore device swaps ↗
+        <Link className="btn btn-dark" href="/sign-up">
+          Start accepting swaps ↗
         </Link>
       </div>
       <div className="swap-visual">

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { AuthForm } from './auth-form';
+import { ClerkAccount } from './clerk-account';
 import { configured } from '@/lib/config';
 export function AuthPage({
   mode,
@@ -15,19 +15,20 @@ export function AuthPage({
         <div className="auth-brand">
           <span className="eyebrow">A LITTLE TECH. YOUR OWN BUSINESS.</span>
           <h2>
-            More than
-            <br />a catalogue.
-            <br />
-            <em>
+            <span className="auth-headline-intro">
+              More than
+              <br />a catalogue.
+            </span>
+            <em className="auth-headline-chapter">
               Your next
               <br />
               chapter.
             </em>
           </h2>
           <img src="/assets/hero.png" alt="Floating gadget collection" />
-          <Link href="/demo">Explore a sample storefront ↗</Link>
+          <Link href="/">Back to the homepage ↗</Link>
         </div>
-        <AuthForm mode={mode} ready={configured()} />
+        <ClerkAccount mode={mode} ready={configured()} />
       </div>
       <footer>
         Customer? Open your seller’s store link to shop. No account needed.

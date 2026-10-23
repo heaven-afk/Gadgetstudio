@@ -1,6 +1,12 @@
+import { filterRequests } from './request-filters.js';
 import { $, $$, esc, money } from './dom.js';
 import { icon } from './icons.js';
 export function createStudio({ store, getAccount, getManagedStores, getTab }) {
+  const requestFilters = { kind: 'all', status: 'open', search: '' };
+  function updateRequestFilters(values) {
+    Object.assign(requestFilters, values);
+    renderRequestList();
+  }
   function renderStudio() {
     const account = getAccount(),
       managedStores = getManagedStores(),
@@ -43,6 +49,13 @@ export function createStudio({ store, getAccount, getManagedStores, getTab }) {
       renderRequests();
       return;
     }
+    if (studioTab === 'archived') {
+      const products = store().archivedProducts || [];
+      $('#studio-content').innerHTML =
+        studioLinks() +
+        `<div class="studio-content-header"><div><h2>Archived listings<span class="orange">.</span></h2><p>Review prices and stock before restoring a listing to your public storefront.</p></div></div>${products.length ? `<div class="inventory-table-wrap"><table class="inventory-table"><thead><tr><th>PRODUCT / CONFIGURATION</th><th>PRICE</th><th>STOCK</th><th>ACTIONS</th></tr></thead><tbody>${products.map((p) => `<tr><td><strong>${esc(p.name)}</strong><br>${esc(p.storage)} · ${esc(p.condition)}</td><td>${money(p.price)}</td><td>${p.stock}</td><td><button class="table-action" data-restore="${esc(p.id)}">Restore listing</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><h3>No archived listings.</h3><p>Listings you archive will appear here.</p></div>'}`;
+      return;
+    }
     if (studioTab === 'activity') {
       renderActivity();
       return;
@@ -62,10 +75,28 @@ export function createStudio({ store, getAccount, getManagedStores, getTab }) {
       `<div class="studio-content-header"><div><h2>Make it your store<span class="orange">.</span></h2><p>Customers see these settings on your storefront.</p></div></div><form class="settings-form" id="settings-form"><label class="form-label">Business name<input name="name" required maxlength="70" value="${esc(s.name)}"></label><label class="form-label">Short display name<input name="displayName" required maxlength="22" value="${esc(s.displayName)}"></label><label class="form-label full">WhatsApp business number<input name="phone" type="tel" placeholder="e.g. +234 803 123 4567" value="${esc(s.phone)}" maxlength="25"><small>Use the full international number. Leave blank to keep ordering disabled.</small></label><label class="form-label full">Pickup / store address<textarea name="address" maxlength="500">${esc(s.address)}</textarea></label><label class="checkbox-label full"><input type="checkbox" name="pickup" ${s.pickup ? 'checked' : ''}> Offer physical store pickup</label><label class="checkbox-label full"><input type="checkbox" name="sampleCatalogue" ${s.sampleCatalogue ? 'checked' : ''}> Show sample catalogue notice (turn off after verifying your listings)</label><label class="checkbox-label full"><input type="checkbox" name="acceptsSwaps" ${s.acceptsSwaps ? 'checked' : ''}> Accept device swap requests</label><label class="form-label full">Swap policy<textarea name="swapPolicy" maxlength="1000">${esc(s.swapPolicy || '')}</textarea><small>Explain eligible devices and inspection requirements. Quotes are set by you after assessment.</small></label><div class="full"><button class="button primary" type="submit">Save store settings ${icon('check-circle')}</button></div></form>`;
   }
   function renderRequests() {
-    const rs = store().requests || [];
     $('#studio-content').innerHTML =
       studioLinks() +
-      `<div class="studio-content-header"><div><h2>Conversations to <span class="serif">conversions.</span></h2><p>Website requests are saved here. WhatsApp sending, payment and delivery are not tracked automatically.</p></div></div><div class="request-filters"><button class="active" data-request-filter="all">All requests</button><button data-request-filter="order">Orders (${rs.filter((r) => r.kind === 'order').length})</button><button data-request-filter="swap">Swaps (${rs.filter((r) => r.kind === 'swap').length})</button></div><div id="request-list">${rs.length ? rs.map(requestCard).join('') : '<div class="empty-state"><h3>Ready for the first hello.</h3><p>Order and device swap requests will appear here.</p></div>'}</div>`;
+      '<div class="studio-content-header"><div><h2>Conversations to <span class="serif">conversions.</span></h2><p>Website requests are saved here. WhatsApp sending, payment and delivery are not tracked automatically. Showing the latest 200 requests.</p></div></div>' +
+      '<div class="request-tools"><label>Search requests<input type="search" id="request-search" maxlength="150" placeholder="Customer, phone, reference or device"></label><label>Request status<select id="request-status"><option value="open">Open requests</option><option value="all">All statuses</option><option value="submitted">Submitted</option><option value="reviewing">Reviewing</option><option value="quoted">Quoted</option><option value="completed">Completed</option><option value="declined">Declined</option></select></label></div>' +
+      '<div class="request-filters"><button data-request-filter="all">All requests</button><button data-request-filter="order">Orders</button><button data-request-filter="swap">Swaps</button></div><p id="request-count" role="status" aria-live="polite"></p><div id="request-list"></div>';
+    $('#request-search').value = requestFilters.search;
+    $('#request-status').value = requestFilters.status;
+    renderRequestList();
+  }
+  function renderRequestList() {
+    const requests = store().requests || [];
+    const matches = filterRequests(requests, requestFilters);
+    $$('[data-request-filter]').forEach((button) => {
+      const active = button.dataset.requestFilter === requestFilters.kind;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    $('#request-count').textContent =
+      matches.length + ' of ' + requests.length + ' loaded requests';
+    $('#request-list').innerHTML = matches.length
+      ? matches.map(requestCard).join('')
+      : '<div class="empty-state"><h3>No matching requests.</h3><p>Try another search or choose a different status.</p></div>';
   }
   function requestCard(r) {
     const isSwap = r.kind === 'swap',
@@ -79,5 +110,5 @@ export function createStudio({ store, getAccount, getManagedStores, getTab }) {
       `<div class="studio-content-header"><div><h2>Every unit. <span class="serif">Accounted for.</span></h2><p>The latest 100 stock changes, including physical sales and completed requests.</p></div></div><div class="inventory-table-wrap"><table class="inventory-table"><thead><tr><th>WHEN</th><th>DEVICE</th><th>CHANGE</th><th>BALANCE</th><th>REASON</th></tr></thead><tbody>${events.map((e) => `<tr><td>${new Date(e.created).toLocaleString('en-NG', { timeZone: 'Africa/Lagos' })}</td><td>${esc(e.name)}</td><td>${e.delta > 0 ? '+' : ''}${e.delta}</td><td>${e.balance}</td><td>${esc(e.reason)}</td></tr>`).join('')}</tbody></table></div>`;
   }
 
-  return { renderStudio };
+  return { renderStudio, updateRequestFilters };
 }

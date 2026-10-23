@@ -20,6 +20,15 @@ await pg.exec(
 await pg.exec(
   `INSERT INTO auth.users VALUES ('00000000-0000-0000-0000-000000000001'),('00000000-0000-0000-0000-000000000002');`,
 );
+await pg.exec(
+  await readFile(
+    new URL(
+      '../supabase/migrations/202610230001_clerk_owners.sql',
+      import.meta.url,
+    ),
+    'utf8',
+  ),
+);
 function connection(tx = pg) {
   return {
     async unsafe(sql, args) {
@@ -48,10 +57,10 @@ const objects = new Map(),
     },
   };
 const alice = {
-    userId: '00000000-0000-0000-0000-000000000001',
+    userId: 'user_alice_clerk',
     displayName: 'Alice',
   },
-  bob = { userId: '00000000-0000-0000-0000-000000000002', displayName: 'Bob' };
+  bob = { userId: 'user_bob_clerk', displayName: 'Bob' };
 async function call(
   path,
   { method = 'GET', data, user = alice, origin = 'https://test.local' } = {},
@@ -515,4 +524,67 @@ await assert.rejects(
   /permission denied/,
 );
 await pg.exec('RESET ROLE');
+const archiveCandidate = check(await call(`stores/${a.id}/manage`), 200)
+  .products[0];
+check(
+  await call(`stores/${a.id}/products/${archiveCandidate.id}`, {
+    method: 'DELETE',
+    data: { revision: archiveCandidate.revision },
+  }),
+  200,
+);
+const archived = check(
+  await call(`stores/${a.id}/manage`),
+  200,
+).archivedProducts.find((p) => p.id === archiveCandidate.id);
+assert(archived);
+const restorePath = `stores/${a.id}/products/${archived.id}/restore`;
+check(
+  await call(restorePath, {
+    method: 'POST',
+    data: { revision: archived.revision },
+    user: null,
+  }),
+  401,
+);
+check(
+  await call(restorePath, {
+    method: 'POST',
+    data: { revision: archived.revision },
+    user: bob,
+  }),
+  403,
+);
+check(
+  await call(restorePath, {
+    method: 'POST',
+    data: { revision: archiveCandidate.revision },
+  }),
+  409,
+);
+const beforeRestore = check(await call(`stores/${a.id}/manage`), 200).events;
+check(
+  await call(restorePath, {
+    method: 'POST',
+    data: { revision: archived.revision },
+  }),
+  200,
+);
+check(
+  await call(restorePath, {
+    method: 'POST',
+    data: { revision: archived.revision },
+  }),
+  409,
+);
+const restoredStore = check(await call(`stores/${a.id}/manage`), 200);
+const restored = restoredStore.products.find((p) => p.id === archived.id);
+assert.equal(restored.stock, archived.stock);
+assert.equal(restored.price, archived.price);
+assert.equal(restored.revision, archived.revision + 1);
+assert.deepEqual(restoredStore.events, beforeRestore);
+assert(!restoredStore.archivedProducts.some((p) => p.id === archived.id));
+console.log(
+  'PASS: archived listing restoration, ownership, stale revisions and preserved stock history.',
+);
 await pg.close();

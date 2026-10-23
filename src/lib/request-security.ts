@@ -16,10 +16,11 @@ export function sameOrigin(request: Request) {
       !['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname)
     )
       return false;
+    const canonicalSite = Reflect.get(process.env, 'NEXT_PUBLIC_SITE_URL');
     if (
       process.env.NODE_ENV === 'production' &&
-      process.env.NEXT_PUBLIC_SITE_URL &&
-      origin.origin !== new URL(process.env.NEXT_PUBLIC_SITE_URL).origin
+      canonicalSite &&
+      origin.origin !== new URL(canonicalSite).origin
     )
       return false;
     return true;

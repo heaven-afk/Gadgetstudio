@@ -1,66 +1,31 @@
-# Connect Supabase and Vercel
+# Deployment: Clerk accounts, Supabase data, Vercel hosting
 
-## 1. Supabase
+## Clerk
 
-Create a project under your own account. Choose an appropriate region for your sellers. Save its database password in a password manager, not in the repository or chat.
+Configure email/password with verified email and Google in the Clerk development instance. For launch, create/configure the production instance, configure its domain/DNS and production Google OAuth credentials using the callback URL shown by Clerk. Use matching production publishable/secret keys in Vercel. Check allowed origins, email delivery, signup restrictions and session settings in Clerk. Supabase Auth and SMTP are no longer involved in account flows.
 
-Apply `supabase/migrations/202610220001_platform.sql` using Supabase's SQL editor, or run `supabase init`, link the intended hosted project with `supabase link --project-ref YOUR_PROJECT_REF`, and run `supabase db push`. Apply it once. Future schema changes require new versioned migrations.
+## Supabase
 
-The SQL creates the business tables, stock functions/triggers and two private buckets: `product-assets` and `swap-photos`. No sample seller data is inserted. Do not add public access policies to either bucket or business tables; this app serves data through its own API.
+Keep the existing project for PostgreSQL and private Storage. Apply migrations in order. If 202610220001_platform.sql is already applied, apply only 202610230001_clerk_owners.sql. Do not edit or rerun applied migrations. See ../SETUP.md for ownership migration details. Database credentials must use the transaction pooler URI; prepared statements are disabled in the app.
 
-Set these environment variables in Vercel and your ignored local `.env.local`:
+Business tables remain inaccessible to Supabase anon/authenticated Data API roles. Clerk sessions are verified by server code and every seller operation checks store ownership. No browser Clerk token is passed directly to the database, and no webhook is needed to create stores. Product assets and trade-in photos remain in private buckets served by the application.
 
-| Name                                   | Value                                                                            |
-| -------------------------------------- | -------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SITE_URL`                 | Your canonical HTTPS application origin; no trailing path                        |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase project URL                                                             |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Project publishable key (or compatible legacy anon key)                          |
-| `SUPABASE_SECRET_KEY`                  | Server-only project secret key (or legacy service-role key) for Storage          |
-| `DATABASE_URL`                         | Supabase transaction-pooler connection URI, with its actual password URL-encoded |
+Existing Supabase users and sessions do not become Clerk users. Verify any ownership transfer administratively; legacy stores remain under their original IDs until mapped. Never link stores by email alone.
 
-Use the transaction pooler on its provided port, and keep server-side prepared statements disabled (already configured). Use the credentials from the Supabase Connect dialog. Never prefix database or secret keys with `NEXT_PUBLIC_`.
+## Vercel
 
-## 2. Seller authentication and email
+Use heaven-platform as the app root, Next.js preset and Node.js 24. Set all variables listed in ../SETUP.md with production values. Keep secrets server-only. Use separate development/staging data from production inventory. Set NEXT_PUBLIC_SITE_URL to the canonical HTTPS origin and deploy with npm ci / npm run build.
 
-Enable email/password authentication and **Confirm email**. Configure a minimum password length of 12 or more and provider abuse limits. Configure production SMTP with your sender/domain and test delivery; development email limits are not a production email service.
+## Launch acceptance
 
-Set Supabase's Site URL to the exact value of `NEXT_PUBLIC_SITE_URL`. Add these allowed redirect URLs:
+- Test email/password signup, actual verification delivery, sign-in, reset and sign-out.
+- Test Google signup, returning sign-in and cancellation using the production credentials.
+- Use two sellers to verify tenant isolation and private photo access.
+- If migrating existing data, verify each ownership mapping and inventory after transfer.
+- Verify public storefront access without customer login and test mobile/desktop account flows.
+- Add a product and photo, submit order/swap requests, quote and complete them; confirm stock deducts once.
+- Check the actual seller WhatsApp number and prepared message.
+- Configure monitoring, rate limits, Clerk production settings and error reporting.
+- Back up PostgreSQL and Storage objects separately and test restoration before launch.
 
-- `https://your-domain/auth/callback`
-- `https://your-domain/auth/callback?next=/update-password`
-- `http://localhost:3000/auth/callback` for local development
-- `http://localhost:3000/auth/callback?next=/update-password` for local recovery testing
-
-For local auth testing, use the exact hostname set in `NEXT_PUBLIC_SITE_URL`: cookies for `localhost` and `127.0.0.1` are not interchangeable.
-
-The app supports the standard PKCE confirmation/recovery links via `/auth/callback`. For token-hash templates that also work across browsers, set the signup email link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email` and the recovery link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery`. Keep redirect destinations restricted to your domains. The callback only permits the dashboard or password update page as internal destinations.
-
-## 3. Vercel
-
-Import `https://github.com/heaven-afk/Gadgetstudio` into a Vercel project you own. Select the **Next.js** preset, repository root as the Root Directory, and Node.js 24. The usual commands are `npm ci` and `npm run build`; the app does not use Vinext or Cloudflare bindings.
-
-Add all five environment variables to the appropriate Vercel environments, then deploy. Use separate Supabase projects for development/staging and production so preview deployments cannot modify live stock. Configure a canonical production domain and matching Auth redirect URLs. An unconfigured deployment intentionally shows disabled account forms and rejects database-dependent requests.
-
-GitHub Actions runs tests, type checking and a production build. Enable branch protection for `main` and require these checks before merging later changes. Set Vercel deployment permissions and production controls in your own accounts.
-
-## 4. Acceptance checks before onboarding real sellers
-
-- Register a seller using an email address you control; confirm the actual email and sign in.
-- Test password recovery and sign-out on another browser/device.
-- Create two real test sellers and ensure neither can access the other's dashboard data, products, requests or trade-in photos.
-- Open each `/s/store-slug` link in an incognito session: no customer login should be required.
-- Add a product, upload a photo, refresh another device, and verify shared prices and stock.
-- Submit an order and a swap with consenting test details. Verify the private photos are inaccessible when signed out.
-- Test assessment, quotes, physical-sale recording, stock contention and repeated completion. Stock must not go below zero or deduct twice.
-- Check the prepared WhatsApp message and recipient with the actual seller number before sending it.
-- Check production errors, email limits, upload limits, rate limiting and monitoring. Add error reporting/alerts suitable for your operations.
-
-## 5. Backups and operational ownership
-
-Select database backups/PITR appropriate to the business and verify restoration into a separate project. Back up the actual Storage objects separately; database backups contain their metadata, not the image files. Document the chosen retention period, who can restore data and how to delete customer records/photos when appropriate. Perform a restore drill before launch.
-
-Record inventory adjustments in the application. Do not manually edit quantities in the database without understanding the history triggers. Migrations are append-only after application. Keep a tested migration rollback/recovery procedure.
-
-## No credentials in Git
-
-`.env*`, dependency directories and build output are ignored. `.env.example` contains names only. Enter live credentials into Vercel/Supabase or a local ignored environment file; do not paste them into messages or commit them.
+CI runs npm test, npm run typecheck, npm run build and npm run test:http. HTTP smoke tests explicitly disable Clerk and database credentials; they do not send emails or change hosted records. Local passing checks do not verify hosted Clerk delivery, Google OAuth or Supabase services.

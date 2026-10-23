@@ -1,6 +1,27 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { safeNext, siteUrl } from '../src/lib/config.ts';
+import { configured, safeNext, siteUrl } from '../src/lib/config.ts';
+
+test('Clerk setup rejects placeholders and mismatched instance types', () => {
+  const oldPublic = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const oldSecret = process.env.CLERK_SECRET_KEY;
+  try {
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_…';
+    process.env.CLERK_SECRET_KEY = 'sk_test_…';
+    assert.equal(configured(), false);
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_' + 'a'.repeat(32);
+    process.env.CLERK_SECRET_KEY = 'sk_live_' + 'b'.repeat(32);
+    assert.equal(configured(), false);
+    process.env.CLERK_SECRET_KEY = 'sk_test_' + 'b'.repeat(32);
+    assert.equal(configured(), true);
+  } finally {
+    if (oldPublic === undefined)
+      delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    else process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = oldPublic;
+    if (oldSecret === undefined) delete process.env.CLERK_SECRET_KEY;
+    else process.env.CLERK_SECRET_KEY = oldSecret;
+  }
+});
 test('auth callbacks restrict redirects to internal account destinations', () => {
   for (const value of [
     'https://evil.test',
