@@ -1,8 +1,7 @@
 import type { NextConfig } from 'next';
 const config: NextConfig = {
   poweredByHeader: false,
-  // Invalidate assets from the previous Supabase account UI after this migration.
-  deploymentId: process.env.VERCEL_GIT_COMMIT_SHA || 'clerk-accounts-v1',
+  // Let Vercel supply its deployment ID; a Git SHA exceeds its custom-ID limit.
   // Clerk's session headers use a same-origin rewrite; preserve the browser URL.
   skipProxyUrlNormalize: true,
   outputFileTracingIncludes: {
