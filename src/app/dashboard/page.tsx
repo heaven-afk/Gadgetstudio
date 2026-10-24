@@ -24,7 +24,7 @@ export default async function Dashboard() {
         <a href="/">Heaven Gadget Studio</a>
         <UserButton />
         <a href="/dashboard/workspace" target="_blank" rel="noopener">
-          Open workspace in a new tab ↗
+          Open workspace in a new tab
         </a>
       </header>
       <iframe title="Seller workspace" src="/dashboard/workspace" />

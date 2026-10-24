@@ -6,7 +6,7 @@ export function SiteFooter() {
         heaven<span>.</span>
       </Link>
       <span>Built for the way gadget businesses sell.</span>
-      <Link href="/sign-in">Seller sign in ↗</Link>
+      <Link href="/sign-in">Seller sign in</Link>
     </footer>
   );
 }

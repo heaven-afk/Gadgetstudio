@@ -5,6 +5,7 @@ export function sameOrigin(request: Request) {
     const raw = request.headers.get('origin'),
       host = request.headers.get('host');
     if (!raw) return false;
+    if (request.headers.get('sec-fetch-site') === 'cross-site') return false;
     const origin = new URL(raw);
     if (!['http:', 'https:'].includes(origin.protocol)) return false;
     const target = host
@@ -16,13 +17,8 @@ export function sameOrigin(request: Request) {
       !['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname)
     )
       return false;
-    const canonicalSite = Reflect.get(process.env, 'NEXT_PUBLIC_SITE_URL');
-    if (
-      process.env.NODE_ENV === 'production' &&
-      canonicalSite &&
-      origin.origin !== new URL(canonicalSite).origin
-    )
-      return false;
+    // The browser must match this request's actual host, including on Vercel
+    // deployment aliases. The canonical URL is for links, not a CSRF allowlist.
     return true;
   } catch {
     return false;

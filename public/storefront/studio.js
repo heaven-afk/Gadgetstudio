@@ -33,12 +33,12 @@ export function createStudio({ store, getAccount, getManagedStores, getTab }) {
       '</span>';
     if (!account) {
       $('#studio-content').innerHTML =
-        `<div class="studio-welcome"><span class="eyebrow">YOUR BUSINESS. YOUR OWN SPACE.</span><h2>Give your gadgets<br>a place to <span class="serif">shine.</span></h2><p>Create your storefront, manage your stock, and review orders and swaps in one place.</p><a class="button primary" href="/sign-in?next=/dashboard" target="_top">Sign in to your store ${icon('arrow')}</a></div>`;
+        `<div class="studio-welcome"><span class="eyebrow">YOUR BUSINESS. YOUR OWN SPACE.</span><h2>Give your gadgets<br>a place to <span class="serif">shine.</span></h2><p>Create your storefront, manage your stock, and review orders and swaps in one place.</p><a class="button primary" href="/sign-in?next=/dashboard" target="_top">Sign in to your store </a></div>`;
       return;
     }
     if (!store().canManage) {
       $('#studio-content').innerHTML =
-        `<div class="studio-welcome"><span class="eyebrow">A LITTLE TECH. YOUR OWN BUSINESS.</span><h2>Welcome to your<br>seller <span class="serif">studio.</span></h2><p>${managedStores.length ? 'Choose one of your stores above or create another.' : 'Create your first store to start managing your catalogue, inventory, orders and swaps.'}</p><button class="button primary" data-action="create-store">Create your store ${icon('arrow')}</button></div>`;
+        `<div class="studio-welcome"><span class="eyebrow">A LITTLE TECH. YOUR OWN BUSINESS.</span><h2>Welcome to your<br>seller <span class="serif">studio.</span></h2><p>${managedStores.length ? 'Choose one of your stores above or create another.' : 'Create your first store to start managing your catalogue, inventory, orders and swaps.'}</p><button class="button primary" data-action="create-store">Create your store </button></div>`;
       return;
     }
     if (studioTab === 'settings') {
@@ -66,7 +66,7 @@ export function createStudio({ store, getAccount, getManagedStores, getTab }) {
       `<div class="studio-content-header"><div><h2>Your collection<span class="orange">.</span></h2><p>Products and prices are shared across your storefront and seller studio.</p></div><button class="button dark small" data-action="add-product">+ Add product</button></div><div class="stats-grid"><div class="stat"><span>PRODUCT LISTINGS</span><strong>${ps.length}</strong></div><div class="stat"><span>UNITS IN STOCK</span><strong>${ps.reduce((s, p) => s + p.stock, 0)}</strong></div><div class="stat"><span>LOW STOCK / ≤ 2</span><strong>${ps.filter((p) => p.stock <= 2).length}</strong></div></div>${ps.length ? `<div class="inventory-table-wrap"><table class="inventory-table"><thead><tr><th>PRODUCT / CONFIGURATION</th><th>CONDITION</th><th>PRICE</th><th>STOCK</th><th>ACTIONS</th></tr></thead><tbody>${ps.map((p) => `<tr><td><div class="table-product"><img src="${esc(p.image)}" alt=""><div><strong>${esc(p.name)}</strong><small>${esc(p.storage)} · ${esc(p.colors.join(', '))}</small></div></div></td><td>${esc(p.condition)}</td><td>${money(p.price)}</td><td class="${p.stock <= 2 ? 'low-stock' : ''}">${p.stock}</td><td><button class="table-action" data-edit="${esc(p.id)}">Edit</button><button class="table-action" data-sale="${esc(p.id)}" ${p.stock === 0 ? 'disabled' : ''}>Record sale</button><button class="table-action" data-delete="${esc(p.id)}">Archive</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state"><h3>Your collection starts here.</h3><p>Add your first gadget and share your store link.</p></div>'}`;
   }
   function studioLinks() {
-    return `<div class="studio-links"><span>/s/${esc(store().slug)}</span><button data-action="copy-store-link">Copy store link ↗</button><button data-action="refresh-store">Refresh data ↻</button><button data-action="signout">Sign out</button></div>`;
+    return `<div class="studio-links"><span>/s/${esc(store().slug)}</span><button data-action="copy-store-link">Copy store link</button><button data-action="refresh-store">Refresh data ↻</button><button data-action="signout">Sign out</button></div>`;
   }
   function renderSettings() {
     const s = store();

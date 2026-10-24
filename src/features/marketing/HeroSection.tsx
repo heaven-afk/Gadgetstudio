@@ -3,16 +3,12 @@ export function HeroSection() {
   return (
     <section className="platform-hero">
       <div className="hero-text">
-        <span className="eyebrow">
-          <i /> MADE FOR INDEPENDENT GADGET SELLERS
-        </span>
         <h1>
           Your store.
           <br />
           Their next
           <br />
           <em>upgrade.</em>
-          <span className="star">✳</span>
         </h1>
         <p>
           Give your gadgets a home of their own.
@@ -21,10 +17,10 @@ export function HeroSection() {
         </p>
         <div className="cta-row">
           <Link className="btn btn-orange" href="/sign-up">
-            Let’s build your store <span>↗</span>
+            Let’s build your store
           </Link>
           <Link className="quiet-link" href="/sign-up">
-            Create your account →
+            Create your account
           </Link>
         </div>
         <div className="hero-notes">
@@ -34,9 +30,9 @@ export function HeroSection() {
       </div>
       <div className="store-preview">
         <div className="preview-browser">
-          <span />
-          <span />
-          <span />
+          <span className="preview-light light-coral" />
+          <span className="preview-light light-amber" />
+          <span className="preview-light light-green" />
           <small>your-store / your-world</small>
         </div>
         <div className="preview-store">
@@ -55,7 +51,7 @@ export function HeroSection() {
                 <br />
                 next <em>favourite.</em>
               </h2>
-              <Link href="/sign-up">Create your collection ↗</Link>
+              <Link href="/sign-up">Create your collection</Link>
             </div>
             <img
               src="/assets/hero.png"
@@ -78,7 +74,6 @@ export function HeroSection() {
           </div>
         </div>
         <div className="floating-note">
-          ↗{' '}
           <div>
             Your brand. Your link.
             <small>Your customer relationships.</small>

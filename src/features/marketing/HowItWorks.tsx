@@ -25,7 +25,7 @@ export function HowItWorks() {
             Add your business details, upload your gadgets and set prices. Share
             a link that shows only your collection.
           </p>
-          <Link href="/sign-up">Set up your storefront ↗</Link>
+          <Link href="/sign-up">Set up your storefront</Link>
         </article>
         <article>
           <span>02 / EVERYTHING ACCOUNTED FOR</span>

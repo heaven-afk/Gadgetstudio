@@ -26,7 +26,7 @@ export function AuthPage({
             </em>
           </h2>
           <img src="/assets/hero.png" alt="Floating gadget collection" />
-          <Link href="/">Back to the homepage ↗</Link>
+          <Link href="/">Back to the homepage</Link>
         </div>
         <ClerkAccount mode={mode} ready={configured()} />
       </div>

@@ -8,7 +8,7 @@ export function SignupSection() {
         <br />a great <em>first impression.</em>
       </h2>
       <Link href="/sign-up" className="btn btn-orange">
-        Create your store ↗
+        Create your store
       </Link>
       <p>
         No customer accounts needed. Just your link, their picks, and a

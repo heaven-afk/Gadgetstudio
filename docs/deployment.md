@@ -16,6 +16,8 @@ Existing Supabase users and sessions do not become Clerk users. Verify any owner
 
 Use heaven-platform as the app root, Next.js preset and Node.js 24. Set all variables listed in ../SETUP.md with production values. Keep secrets server-only. Use separate development/staging data from production inventory. Set NEXT_PUBLIC_SITE_URL to the canonical HTTPS origin and deploy with npm ci / npm run build.
 
+Writes compare the browser's Origin with the incoming request's Host, so using another valid Vercel deployment address does not prevent store creation. Cross-origin writes are rejected; the canonical URL is not used as a submission allowlist. Test signup and store creation from the actual address shared with sellers, including on mobile.
+
 ## Launch acceptance
 
 - Test email/password signup, actual verification delivery, sign-in, reset and sign-out.

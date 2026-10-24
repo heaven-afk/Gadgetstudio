@@ -3,7 +3,10 @@ export function CategoryStrip() {
     <div className="platform-strip">
       <span>PHYSICAL STORE? ONLINE ONLY? YOU’RE AT HOME HERE.</span>
       <div>
-        Phones <i>✳</i> Laptops <i>✳</i> Audio <i>✳</i> Accessories
+        <span>Phones</span>
+        <span>Laptops</span>
+        <span>Audio</span>
+        <span>Accessories</span>
       </div>
     </div>
   );

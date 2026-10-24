@@ -1,6 +1,7 @@
 // Check the built app with missing credentials. No emails, production records or
 // external requests are made. The child server and test port are owned here.
 import { spawn } from 'node:child_process';
+import { request as httpRequest } from 'node:http';
 import assert from 'node:assert/strict';
 const env = {
   ...process.env,
@@ -33,6 +34,29 @@ server.stderr.on('data', (c) => {
   log = (log + c).slice(-4000);
 });
 const base = 'http://127.0.0.1:3100';
+// Node fetch replaces Host. Use HTTP directly to model Vercel's routed host.
+function deploymentPost(origin) {
+  return new Promise((resolve, reject) => {
+    const request = httpRequest(
+      base + '/api/stores',
+      {
+        method: 'POST',
+        headers: {
+          Host: 'heaven-preview.vercel.app',
+          Origin: origin,
+          'Sec-Fetch-Site': 'same-origin',
+          'Content-Type': 'application/json',
+        },
+      },
+      (response) => {
+        response.resume();
+        response.on('end', () => resolve(response.statusCode));
+      },
+    );
+    request.on('error', reject);
+    request.end('{}');
+  });
+}
 try {
   let ready = false;
   for (let i = 0; i < 20; i++) {
@@ -111,6 +135,12 @@ try {
     body: '{}',
   });
   assert.equal(r.status, 403);
+  assert.equal(
+    await deploymentPost('https://heaven-preview.vercel.app'),
+    503,
+    'A valid deployment host must reach the service, not fail the origin check',
+  );
+  assert.equal(await deploymentPost('https://evil.test'), 403);
   r = await fetch(base + '/api/auth/resend-confirmation', {
     method: 'POST',
     headers: { Origin: base, 'Content-Type': 'application/json' },

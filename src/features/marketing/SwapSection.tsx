@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PhoneDevice } from './PhoneDevice';
 export function SwapSection() {
   return (
     <section className="swap-feature">
@@ -14,26 +15,32 @@ export function SwapSection() {
           swap.
         </p>
         <Link className="btn btn-dark" href="/sign-up">
-          Start accepting swaps ↗
+          Start accepting swaps
         </Link>
       </div>
-      <div className="swap-visual">
-        <div>
+      <div
+        className="swap-gadgets"
+        role="img"
+        aria-label="A graphite smartphone traded toward a new titanium smartphone."
+      >
+        <div className="swap-device swap-device-before">
           <span>THEIR DEVICE</span>
-          <b>
-            A little
-            <br />
-            <em>pre-loved.</em>
-          </b>
+          <PhoneDevice finish="graphite" back />
+          <p>
+            A little <em>pre-loved.</em>
+          </p>
         </div>
-        <i>⇄</i>
-        <div>
+        <div className="swap-connection" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+        <div className="swap-device swap-device-after">
           <span>THEIR NEXT CHAPTER</span>
-          <b>
-            A new
-            <br />
-            <em>possibility.</em>
-          </b>
+          <PhoneDevice />
+          <p>
+            A new <em>possibility.</em>
+          </p>
         </div>
       </div>
     </section>

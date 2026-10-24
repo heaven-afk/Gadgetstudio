@@ -47,7 +47,7 @@ function ConnectedAccount({
         </p>
         <UserButton />
         <a className="btn btn-orange" href="/dashboard" target="_top">
-          Open dashboard ↗
+          Open dashboard
         </a>
       </div>
     );
