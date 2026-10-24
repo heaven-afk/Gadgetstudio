@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CETWatchClock } from './CETWatchClock';
-import type { UnboxingPlayer } from './unboxing-scene';
 import './unboxing.css';
 
 const chapters = [
@@ -16,7 +15,7 @@ const chapters = [
       </>
     ),
     copy: 'That quiet moment before something new becomes yours.',
-    number: '01',
+    start: 0,
     time: '00:00',
   },
   {
@@ -29,21 +28,21 @@ const chapters = [
       </>
     ),
     copy: 'A little anticipation. A whole new world underneath.',
-    number: '02',
+    start: 5,
     time: '00:05',
   },
   {
-    label: 'Coming alive',
+    label: 'In your hands',
     title: (
       <>
-        The screen
+        A first touch.
         <br />
-        <em>comes alive.</em>
+        <em>A fresh start.</em>
       </>
     ),
     copy: 'Someone’s next favourite is waiting in your store.',
-    number: '03',
-    time: '00:10',
+    start: 14,
+    time: '00:14',
   },
   {
     label: 'Your next chapter',
@@ -55,20 +54,23 @@ const chapters = [
       </>
     ),
     copy: 'A fresh start, at this very moment.',
-    number: '04',
-    time: '00:15',
+    start: 22,
+    time: '00:22',
   },
 ];
 
 export function UnboxingSection() {
   const section = useRef<HTMLElement>(null);
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const player = useRef<UnboxingPlayer | null>(null);
+  const video = useRef<HTMLVideoElement>(null);
+  const pendingSeek = useRef<number | null>(null);
   const [near, setNear] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [pageVisible, setPageVisible] = useState(true);
   const [paused, setPaused] = useState(false);
-  const [reduced, setReduced] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [reduced, setReduced] = useState(true);
+  const [manualPlay, setManualPlay] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [chapter, setChapter] = useState(0);
 
   useEffect(() => {
@@ -76,62 +78,88 @@ export function UnboxingSection() {
     if (!element) return;
     const preference = matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => setReduced(preference.matches);
+    const updateVisibility = () => setPageVisible(!document.hidden);
     update();
+    updateVisibility();
     preference.addEventListener('change', update);
-    if (!('IntersectionObserver' in window)) {
-      setNear(true);
-      setVisible(true);
-      return () => preference.removeEventListener('change', update);
-    }
-    const preload = new IntersectionObserver(
+    document.addEventListener('visibilitychange', updateVisibility);
+    const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) setNear(true);
+        setVisible(entry.intersectionRatio >= 0.25);
       },
-      { rootMargin: '200px' },
+      { threshold: [0, 0.25] },
     );
-    const visibility = new IntersectionObserver(
-      ([entry]) => setVisible(entry.intersectionRatio >= 0.25),
-      { threshold: 0.25 },
-    );
-    preload.observe(element);
-    visibility.observe(element);
+    observer.observe(element);
     return () => {
-      preload.disconnect();
-      visibility.disconnect();
+      observer.disconnect();
       preference.removeEventListener('change', update);
+      document.removeEventListener('visibilitychange', updateVisibility);
     };
   }, []);
 
   useEffect(() => {
-    if (!near || !canvas.current) return;
-    let disposed = false;
-    import('./unboxing-scene')
-      .then(({ createUnboxingPlayer }) => {
-        if (disposed || !canvas.current) return;
-        try {
-          player.current = createUnboxingPlayer(canvas.current, (next) =>
-            setChapter(next),
-          );
-          setReady(true);
-        } catch {
-          setReady(false);
-        }
-      })
-      .catch(() => setReady(false));
+    const film = video.current;
+    if (!film) return;
+    if (
+      !near ||
+      !visible ||
+      !pageVisible ||
+      paused ||
+      (reduced && !manualPlay)
+    ) {
+      film.pause();
+      return;
+    }
+    let cancelled = false;
+    film.play().catch((error: DOMException) => {
+      // A visibility change can abort a pending play without an autoplay rejection.
+      if (!cancelled && error.name !== 'AbortError') setPaused(true);
+    });
     return () => {
-      disposed = true;
-      player.current?.dispose();
-      player.current = null;
+      cancelled = true;
     };
-  }, [near]);
+  }, [near, visible, pageVisible, paused, reduced, manualPlay]);
 
-  useEffect(() => {
-    player.current?.configure({ active: visible, paused, reduced });
-  }, [visible, paused, reduced, ready]);
+  function syncChapter() {
+    const time = video.current?.currentTime ?? 0;
+    let next = 0;
+    chapters.forEach((item, index) => {
+      if (time >= item.start) next = index;
+    });
+    setChapter(next);
+  }
+  function applySeek() {
+    if (
+      video.current &&
+      pendingSeek.current !== null &&
+      video.current.readyState >= 1
+    ) {
+      video.current.currentTime = pendingSeek.current;
+      pendingSeek.current = null;
+    }
+  }
   function selectChapter(index: number) {
+    setNear(true);
     setChapter(index);
     setPaused(true);
-    player.current?.seek(index);
+    video.current?.pause();
+    pendingSeek.current = chapters[index].start;
+    applySeek();
+  }
+  function togglePlayback() {
+    const film = video.current;
+    if (!film) return;
+    if (playing) {
+      film.pause();
+      setPaused(true);
+    } else {
+      setNear(true);
+      setManualPlay(true);
+      setPaused(false);
+      // Keep playback in this user gesture for mobile autoplay policies.
+      if (film.currentSrc) film.play().catch(() => setPaused(true));
+    }
   }
   const current = chapters[chapter];
   return (
@@ -139,18 +167,50 @@ export function UnboxingSection() {
       id="unboxing"
       ref={section}
       className="unboxing-film"
-      data-ready={ready}
-      data-reduced={reduced}
-      aria-label="The upgrade experience: an animated 3D unboxing"
+      aria-label="The upgrade experience: a real smartphone unboxing"
     >
       <header className="film-masthead">
         <span>HEAVEN / THE UPGRADE EXPERIENCE</span>
         <span>A FIRST IMPRESSION, IN MOTION.</span>
       </header>
       <div className="film-content">
+        <div className="film-stage">
+          <video
+            ref={video}
+            src={near && !failed ? '/media/unboxing-film.mp4' : undefined}
+            poster="/media/unboxing-poster.jpg"
+            width="1600"
+            height="676"
+            muted
+            playsInline
+            loop
+            preload="none"
+            aria-describedby="film-description"
+            onTimeUpdate={syncChapter}
+            onLoadedMetadata={applySeek}
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onError={() => {
+              setFailed(true);
+              setPlaying(false);
+            }}
+          >
+            <track
+              kind="descriptions"
+              src="/media/unboxing-descriptions.vtt"
+              srcLang="en"
+              label="Visual description"
+            />
+            Your browser cannot play this film.
+          </video>
+          <p id="film-description" className="film-description">
+            Silent footage: a person lifts the lid from a smartphone box, takes
+            out the phone, and explores their new device.
+          </p>
+        </div>
         <div className="film-editorial">
           <div className="film-chapter-index">
-            <span>{current.number}</span>
+            <span>{String(chapter + 1).padStart(2, '0')}</span>
             <span>{current.label}</span>
           </div>
           <div className="film-copy" key={chapter}>
@@ -165,27 +225,20 @@ export function UnboxingSection() {
           </div>
           <p className="film-signature">YOUR NEXT CHAPTER, UNBOXED.</p>
         </div>
-        <div
-          className="film-stage"
-          role="img"
-          aria-label="A three-dimensional titanium smartphone is unboxed, its display lights up, and a smartwatch and wireless earbuds join the scene."
+        <a
+          className="film-credit"
+          href="https://www.pexels.com/video/a-woman-unboxing-a-smartphone-7191331/"
+          target="_blank"
+          rel="noreferrer"
         >
-          <img
-            className="film-fallback"
-            src="/assets/hero.png"
-            alt="A collection of premium devices"
-          />
-          <canvas ref={canvas} aria-hidden="true" />
-          <span className="film-stage-label">
-            DESIGNED TO BE SOMEONE’S NEXT FAVOURITE.
-          </span>
-        </div>
+          FILM BY PAVEL DANILYUK / PEXELS
+        </a>
       </div>
       <footer className="film-controls">
         <div className="film-chapters" aria-label="Unboxing chapters">
           {chapters.map((item, index) => (
             <button
-              key={item.number}
+              key={item.time}
               type="button"
               aria-pressed={index === chapter}
               onClick={() => selectChapter(index)}
@@ -201,17 +254,18 @@ export function UnboxingSection() {
         <button
           type="button"
           className="film-play"
-          disabled={!ready}
-          onClick={() => setPaused(!paused)}
-          aria-pressed={paused}
+          disabled={failed}
+          onClick={togglePlayback}
+          aria-label={playing ? 'Pause film' : 'Play film'}
         >
-          {paused ? 'Play film' : 'Pause film'}
+          {failed ? 'Film unavailable' : playing ? 'Pause film' : 'Play film'}
         </button>
       </footer>
-      <noscript>
-        The lid lifts. The screen comes alive. Someone’s next favourite is
-        waiting in your store.
-      </noscript>
+      {failed && (
+        <p className="film-error" role="status">
+          The film couldn’t load. You can still explore each chapter above.
+        </p>
+      )}
     </section>
   );
 }

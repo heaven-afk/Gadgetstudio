@@ -64,7 +64,7 @@ Amounts are whole naira. Product prices and request totals must fit their databa
 
 ## Working on changes
 
-The homepage unboxing film lazy-loads Three.js near the viewport. Its original device and packaging models are generated locally; it does not fetch third-party 3D assets. A 20-second sequence coordinates four copy chapters, box opening, screen illumination and the accessory reveal. The final chapter and watch use live CET (UTC+1). Chapter selection pauses at the chosen moment. Rendering stops outside the visible section, and paused/reduced-motion frames only refresh once per second for the watch. A static image remains available when WebGL is unavailable. `device-visuals.css` separately preserves the hero indicator lights and swap illustrations.
+The homepage unboxing film uses a self-hosted, silent H.264 video of a real smartphone unboxing. Four text chapters follow the video's own playback time; chapter selection seeks and pauses the film. The final chapter shows live CET (UTC+1). Playback pauses offscreen and in hidden tabs, respects reduced motion, and offers manual playback when autoplay is blocked. A poster extracted from the footage remains available before playback or if loading fails. See `media-credits.md` for source and license details. `device-visuals.css` separately preserves the hero indicator lights and swap illustrations.
 
 1. Use Node.js 24 and install with `npm ci`.
 2. Format with `npm run format`; CI checks `npm run format:check`.

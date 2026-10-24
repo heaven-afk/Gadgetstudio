@@ -23,15 +23,13 @@
     "postgres": "3.4.9",
     "react": "19.2.6",
     "react-dom": "19.2.6",
-    "server-only": "0.0.1",
-    "three": "0.186.1"
+    "server-only": "0.0.1"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.11",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@types/three": "0.186.0",
     "prettier": "3.6.2",
     "typescript": "5.9.3"
   }
