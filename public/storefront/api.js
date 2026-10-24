@@ -23,6 +23,14 @@ export async function api(path, data, method = 'POST') {
       'The server did not return a valid response. Please try again.',
     );
   }
+  if (result.code === 'SESSION_IDLE_EXPIRED') {
+    window.dispatchEvent(new Event('heaven:idle-expired'));
+    if (window.parent !== window)
+      window.parent.postMessage(
+        { type: 'heaven:idle-expired' },
+        location.origin,
+      );
+  }
   if (!response.ok)
     throw new Error(result.error || 'This action could not be completed.');
   return result;

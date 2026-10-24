@@ -3,6 +3,7 @@ import { handleApi } from '@/server/api/index.mjs';
 import { database } from '@/lib/database-server';
 import { objectStorage } from '@/lib/supabase/storage';
 import { verifiedUser } from '@/lib/auth';
+import { IdleSessionExpired } from '@/server/seller-session.mjs';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -13,7 +14,24 @@ async function handle(request: Request) {
         { error: 'Submit this action from this website.' },
         { status: 403 },
       );
-    const user = await verifiedUser();
+    let user;
+    try {
+      user = await verifiedUser();
+    } catch (error) {
+      if (!(error instanceof IdleSessionExpired)) throw error;
+      const path = new URL(request.url).pathname;
+      // Customer catalogue/order/swap routes must remain public after seller expiry.
+      const publicRequest =
+        /^\/api\/(store\/|product-images\/)/.test(path) ||
+        (request.method === 'POST' &&
+          /^\/api\/stores\/[^/]+\/(orders|swaps)$/.test(path));
+      if (!publicRequest)
+        return Response.json(
+          { error: error.message, code: 'SESSION_IDLE_EXPIRED' },
+          { status: 401, headers: { 'Cache-Control': 'no-store' } },
+        );
+      user = null;
+    }
     if (new URL(request.url).pathname === '/api/me' && !user)
       return Response.json(
         { user: null, stores: [] },

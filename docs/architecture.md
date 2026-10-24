@@ -64,6 +64,8 @@ Amounts are whole naira. Product prices and request totals must fit their databa
 
 ## Working on changes
 
+Seller session deadlines are enforced by `src/server/seller-session.mjs` and `verifiedUser()`, backed by the RLS-protected `seller_sessions` table. Only same-origin activity POSTs renew a live session; reads cannot extend it. The shared `public/storefront/session-idle.js` controller reports trusted keyboard/touch/pointer/wheel activity from the dashboard and same-origin workspace iframe, handles return from background, and drives the one-minute warning. The React shell and standalone workspace both clear seller content on expiry. Database regression tests cover exact-boundary expiry, non-renewing polls, concurrent late activity, replay, owner binding and Data API role denial.
+
 The homepage unboxing film uses a self-hosted, silent H.264 video of a real smartphone unboxing. Four text chapters follow the video's own playback time; chapter selection seeks and pauses the film. The final chapter shows live CET (UTC+1). Playback pauses offscreen and in hidden tabs, respects reduced motion, and offers manual playback when autoplay is blocked. A poster extracted from the footage remains available before playback or if loading fails. See `media-credits.md` for source and license details. `device-visuals.css` separately preserves the hero indicator lights and swap illustrations.
 
 1. Use Node.js 24 and install with `npm ci`.

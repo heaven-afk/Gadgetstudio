@@ -1,0 +1,61 @@
+.idle-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: grid;
+  place-items: center;
+  background: #f7f6f0;
+  padding: 20px;
+  color: #252a23;
+}
+.idle-dialog {
+  box-sizing: border-box;
+  width: min(440px, calc(100vw - 40px));
+  padding: 30px;
+  border: 1px solid #d5d8ca;
+  border-radius: 14px;
+  background: #fffef8;
+  color: #252a23;
+  font:
+    14px/1.6 Arial,
+    sans-serif;
+  box-shadow: 0 20px 80px #0003;
+}
+dialog.idle-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+}
+.idle-dialog::backdrop {
+  background: #101810b3;
+  backdrop-filter: blur(8px);
+}
+.idle-dialog h2 {
+  font-size: 24px;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+  margin: 0 0 16px;
+}
+.idle-dialog p {
+  margin: 0 0 18px;
+}
+.idle-dialog button {
+  cursor: pointer;
+  border: 1px solid #d5d8ca;
+  border-radius: 6px;
+  background: #252a23;
+  color: white;
+  padding: 10px 14px;
+  margin: 4px 6px 0 0;
+  font: inherit;
+}
+.idle-dialog button:focus-visible {
+  outline: 3px solid #f45b2b;
+  outline-offset: 3px;
+}
+.idle-dialog button[hidden] {
+  display: none;
+}
+.idle-error {
+  color: #9b371c;
+}

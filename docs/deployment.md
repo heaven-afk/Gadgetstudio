@@ -6,7 +6,11 @@ Configure email/password with verified email and Google in the Clerk development
 
 ## Supabase
 
-Keep the existing project for PostgreSQL and private Storage. Apply migrations in order. If 202610220001_platform.sql is already applied, apply only 202610230001_clerk_owners.sql. Do not edit or rerun applied migrations. See ../SETUP.md for ownership migration details. Database credentials must use the transaction pooler URI; prepared statements are disabled in the app.
+Keep the existing project for PostgreSQL and private Storage. Apply unapplied migrations in order, including `202610240001_seller_sessions.sql` before deploying the idle-session feature. Do not edit or rerun applied migrations. See ../SETUP.md for ownership migration details. Database credentials must use the transaction pooler URI; prepared statements are disabled in the app.
+
+Seller access expires after 15 minutes without recorded user activity. The app implements this independently of Clerk's paid session-timeout settings. A warning appears in the last minute, with a Stay signed in action. Activity is synchronized at most once every 15 seconds; status polling and token refreshes do not extend access. Tabs share a server deadline, including the embedded and standalone workspaces. A backgrounded or sleeping browser is checked on return before interaction. Unsaved edits are not submitted automatically.
+
+The server stores deadlines in the private `seller_sessions` table using database time. Expired sessions cannot bootstrap again; preserve these rows until their corresponding Clerk sessions are definitively invalid. On detecting expiry, the server also attempts to revoke that Clerk session. If that external request fails, the app's database gate still denies seller access. Existing sessions begin the policy when first seen after rollout. A fresh Clerk session is required after expiry. Public shopping, orders and swap submissions remain available without a seller session.
 
 Business tables remain inaccessible to Supabase anon/authenticated Data API roles. Clerk sessions are verified by server code and every seller operation checks store ownership. No browser Clerk token is passed directly to the database, and no webhook is needed to create stores. Product assets and trade-in photos remain in private buckets served by the application.
 
@@ -21,6 +25,7 @@ Writes compare the browser's Origin with the incoming request's Host, so using a
 ## Launch acceptance
 
 - Test email/password signup, actual verification delivery, sign-in, reset and sign-out.
+- Leave a seller idle for 14 minutes: verify the warning; use Stay signed in and verify access extends. Then leave idle for 15 minutes and verify sign-out, denied seller API writes, refresh protection, standalone workspace behavior, and re-sign-in. Check multiple tabs and return after backgrounding a phone.
 - Test Google signup, returning sign-in and cancellation using the production credentials.
 - Use two sellers to verify tenant isolation and private photo access.
 - If migrating existing data, verify each ownership mapping and inventory after transfer.

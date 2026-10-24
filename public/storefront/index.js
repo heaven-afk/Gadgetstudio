@@ -3,10 +3,12 @@ import { createStudio } from './studio.js';
 import { api } from './api.js';
 import { $, $$, esc, money } from './dom.js';
 import { icon } from './icons.js';
+import { mountStandaloneIdleSession } from './session-idle.js';
 function hydrateIcons(root = document) {
   $$('[data-icon]', root).forEach((e) => (e.innerHTML = icon(e.dataset.icon)));
 }
 const isStudioPage = location.pathname.startsWith('/dashboard');
+if (isStudioPage) mountStandaloneIdleSession();
 const STORAGE_KEY = 'heaven-shopping-v2';
 const preferences = readPreferences(() => localStorage.getItem(STORAGE_KEY));
 function defaultState() {

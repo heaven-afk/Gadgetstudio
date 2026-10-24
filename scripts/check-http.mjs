@@ -86,11 +86,35 @@ try {
     'icons.js',
     'preferences.js',
     'studio.js',
+    'session-idle.js',
+    'session-idle.css',
     'styles.css',
   ]) {
     const assetResponse = await fetch(base + '/storefront/' + asset);
     assert.equal(assetResponse.status, 200, asset);
   }
+  for (const method of ['GET', 'POST']) {
+    const response = await fetch(base + '/api/session/activity', {
+      method,
+      headers: method === 'POST' ? { Origin: base } : {},
+    });
+    assert.equal(
+      response.status,
+      401,
+      'activity endpoint requires authentication',
+    );
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+  }
+  assert.equal(
+    (
+      await fetch(base + '/api/session/activity', {
+        method: 'POST',
+        headers: { Origin: 'https://other.example' },
+      })
+    ).status,
+    403,
+    'another site cannot renew seller sessions',
+  );
   for (const path of [
     '/sign-in',
     '/sign-up',
