@@ -9,7 +9,7 @@ const formatter = new Intl.DateTimeFormat('en-GB', {
   hourCycle: 'h23',
 });
 
-export function CETWatchClock() {
+export function CETWatchClock({ inline = false }: { inline?: boolean }) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     const update = () => setNow(new Date());
@@ -22,10 +22,16 @@ export function CETWatchClock() {
     : ['--', '--'];
   return (
     <time dateTime={now?.toISOString()} title="Central European Time (UTC+1)">
-      {hours}
-      <br />
-      {minutes}
-      <small>CET</small>
+      {inline ? (
+        `${hours}:${minutes} CET`
+      ) : (
+        <>
+          {hours}
+          <br />
+          {minutes}
+          <small>CET</small>
+        </>
+      )}
     </time>
   );
 }

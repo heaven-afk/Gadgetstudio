@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import './device-visuals.css';
 export function HeroSection() {
   return (
     <section className="platform-hero">
