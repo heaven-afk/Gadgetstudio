@@ -10,6 +10,13 @@ export const metadata: Metadata = {
   },
   description:
     'Your own gadget storefront. Clear inventory, device swaps and orders sent to your WhatsApp.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+  },
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

@@ -185,11 +185,26 @@ function renderProducts() {
       : `<div class="empty-state">${icon(filters.saved ? 'heart' : 'search')}<h3>${filters.saved ? 'Your favourites belong here.' : 'No gadgets found.'}</h3><p>${filters.saved ? 'Tap a heart on a gadget to save it for later.' : 'Try another category, condition or search.'}</p><button class="button dark" data-action="clear-filters">Explore all gadgets </button></div>`);
   observeReveals();
 }
+function setMenuOpen(open) {
+  $('.header nav').classList.toggle('open', open);
+  const button = $('[data-action="menu"]');
+  button.setAttribute('aria-expanded', String(open));
+  button.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+}
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && $('.header nav').classList.contains('open')) {
+    setMenuOpen(false);
+    $('[data-action="menu"]').focus();
+  }
+});
+matchMedia('(max-width: 850px)').addEventListener('change', () =>
+  setMenuOpen(false),
+);
 function setCategory(category) {
   filters.category = category;
   filters.saved = false;
   renderProducts();
-  $('.header nav').classList.remove('open');
+  setMenuOpen(false);
 }
 function clearFilters() {
   filters = {
@@ -547,6 +562,7 @@ async function copyText(value) {
   }
 }
 async function handleClick(e) {
+  if (!e.target.closest('[data-action="menu"]')) setMenuOpen(false);
   const close = e.target.closest('[data-close]');
   if (close) {
     closeDialog(close.dataset.close);
@@ -749,7 +765,8 @@ async function handleClick(e) {
     filters.saved = false;
     renderProducts();
   }
-  if (action === 'menu') $('.header nav').classList.toggle('open');
+  if (action === 'menu')
+    setMenuOpen(!$('.header nav').classList.contains('open'));
   if (action === 'help') help();
   if (action === 'dashboard') await openStudio();
   if (action === 'configure-store') {

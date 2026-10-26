@@ -86,6 +86,9 @@ em {
   align-items: center;
   font-size: 12px;
 }
+.platform-header a {
+  white-space: nowrap;
+}
 .btn {
   display: inline-flex;
   align-items: center;
@@ -510,6 +513,21 @@ em {
   max-width: 1150px;
   margin: 55px auto;
 }
+.platform-hero > *,
+.swap-feature > *,
+.auth-layout > * {
+  min-width: 0;
+}
+.clerk-account,
+.seller-account-card {
+  min-width: 0;
+  max-width: 100%;
+}
+.seller-account-input {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+}
 .auth-brand {
   background: #ecece2;
   border-radius: 12px;
@@ -695,7 +713,7 @@ em {
 }
 @media (max-width: 1000px) {
   .platform-header nav {
-    gap: 20px;
+    display: none;
   }
   .platform-hero {
     gap: 5%;
@@ -706,7 +724,7 @@ em {
     flex-wrap: wrap;
   }
   .hero-text h1 {
-    font-size: 76px;
+    font-size: clamp(48px, 7.6vw, 76px);
   }
   .star {
     font-size: 47px;
@@ -748,9 +766,16 @@ em {
   }
 }
 @media (max-width: 700px) {
+  .seller-account-card {
+    padding-inline: clamp(20px, 5vw, 32px);
+  }
+  .seller-account-input {
+    font-size: 16px;
+  }
   .platform-header {
     padding: 21px 6%;
     gap: 15px;
+    flex-wrap: wrap;
   }
   .logo {
     font-size: 25px;
@@ -808,6 +833,7 @@ em {
   .hero-notes {
     font-size: 8px;
     gap: 18px;
+    flex-wrap: wrap;
   }
   .store-preview {
     width: 90%;
@@ -851,6 +877,7 @@ em {
     font-size: 10px;
     gap: 8px;
     margin-top: 15px;
+    flex-wrap: wrap;
   }
   .platform-strip i {
     font-size: 15px;
@@ -952,6 +979,7 @@ em {
   }
   .auth-links {
     font-size: 10px;
+    flex-wrap: wrap;
   }
   .auth-shell > footer {
     font-size: 9px;
@@ -973,7 +1001,7 @@ em {
 
 @media (max-width: 700px) {
   .hero-text h1 {
-    font-size: 64px;
+    font-size: clamp(44px, 12vw, 64px);
     letter-spacing: -4px;
   }
   .hero-text .star {
@@ -983,6 +1011,7 @@ em {
 }
 .seller-dashboard {
   min-height: 100dvh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -993,12 +1022,13 @@ em {
   gap: 16px;
   padding: 16px 24px;
   border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
 }
 .seller-dashboard iframe {
   width: 100%;
-  height: calc(100dvh - 65px);
+  min-height: 0;
   border: 0;
-  flex: 1;
+  flex: 1 1 0;
   background: #f8f7f3;
 }
 

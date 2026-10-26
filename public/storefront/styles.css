@@ -23,7 +23,8 @@ body {
   font-size: 14px;
   line-height: 1.5;
 }
-body:has(dialog[open]) {
+body:not(.studio-page):has(dialog[open]),
+body.studio-page:has(dialog[open]:not(#dashboard-dialog)) {
   overflow: hidden;
 }
 button,
@@ -124,6 +125,13 @@ h3 {
   color: inherit;
   font-size: 10px;
   padding: 5px 0;
+  flex-shrink: 0;
+}
+.announcement > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .announcement button span {
   margin-left: 15px;
@@ -153,6 +161,17 @@ h3 {
   font-size: 29px;
   letter-spacing: -1.6px;
   white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+}
+.brand > [data-store-name] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.header-actions,
+.brand-icon {
+  flex-shrink: 0;
 }
 .brand-icon {
   background: var(--orange);
@@ -1408,11 +1427,16 @@ dialog[open] {
   display: flex;
   gap: 4px;
   margin-right: auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
 }
 .studio-tabs button {
   padding: 9px 13px;
   font-size: 12px;
   border-radius: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .studio-tabs button.active {
   background: var(--ink);
@@ -1513,10 +1537,27 @@ dialog[open] {
 }
 .settings-form {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
   max-width: 760px;
   margin-top: 20px;
+}
+.settings-form > * {
+  min-width: 0;
+}
+.settings-form input:not([type='checkbox']),
+.settings-form textarea {
+  width: 100%;
+}
+.settings-form textarea {
+  resize: vertical;
+}
+.settings-form .checkbox-label {
+  align-items: flex-start;
+}
+.settings-form input[type='checkbox'] {
+  flex: 0 0 auto;
+  margin-top: 3px;
 }
 .settings-form .full {
   grid-column: 1/-1;
@@ -2075,6 +2116,7 @@ dialog[open] {
     scrollbar-width: none;
     padding-bottom: 6px;
     flex: 1;
+    min-width: 0;
   }
   .category-tabs button {
     white-space: nowrap;
@@ -2359,6 +2401,9 @@ dialog[open] {
   .studio-content-header h2 {
     font-size: 23px;
   }
+  .studio-content-header {
+    flex-wrap: wrap;
+  }
   .studio-content-header p {
     font-size: 10px;
   }
@@ -2379,7 +2424,15 @@ dialog[open] {
     padding: 10px 8px;
   }
   .settings-form {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-form input:not([type='checkbox']),
+  .settings-form textarea {
+    font-size: 16px;
+  }
+  .settings-form .button {
+    width: 100%;
+    white-space: normal;
   }
   .settings-form .full {
     grid-column: auto;
@@ -2392,6 +2445,10 @@ dialog[open] {
   }
   #product-form {
     gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #product-form .full {
+    grid-column: auto;
   }
   #product-form .form-label {
     font-size: 10px;
@@ -2779,6 +2836,8 @@ dialog[open] {
 .studio-links > span {
   font-family: monospace;
   margin-right: auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .studio-links button {
   padding: 0;
@@ -2872,6 +2931,7 @@ dialog[open] {
 }
 .swap-photos {
   display: flex;
+  flex-wrap: wrap;
   gap: 9px;
   margin: 16px 0;
 }
@@ -2883,7 +2943,7 @@ dialog[open] {
 }
 .quote-summary {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin: 15px 0;
   background: #e8edde;
@@ -2975,6 +3035,7 @@ dialog[open] {
   .swap-banner {
     padding: 34px;
     gap: 20px;
+    grid-template-columns: minmax(0, 1fr);
   }
   .swap-banner h2 {
     font-size: 34px;
@@ -3002,7 +3063,7 @@ dialog[open] {
   .swap-banner {
     margin: 32px 6% 0;
     padding: 30px 25px;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 25px;
   }
   .swap-banner h2 {
@@ -3023,8 +3084,10 @@ dialog[open] {
     gap: 25px;
   }
   .swap-phone {
-    width: 107px;
-    height: 215px;
+    width: clamp(70px, 23vw, 107px);
+    height: auto;
+    aspect-ratio: 107 / 215;
+    flex-shrink: 0;
   }
   .swap-star {
     right: -7px;
@@ -3058,7 +3121,7 @@ dialog[open] {
   .swap-fields input,
   .swap-fields select,
   .swap-fields textarea {
-    font-size: 12px;
+    font-size: 16px;
   }
   .photo-upload {
     padding: 15px;
@@ -3171,4 +3234,48 @@ dialog[open] {
 }
 .studio-page [data-close='dashboard-dialog'] {
   display: none;
+}
+
+.swap-banner > *,
+.swap-fields > *,
+#product-form > *,
+.cart-item > *,
+.studio-content-header > *,
+.request-card,
+.swap-comparison > * {
+  min-width: 0;
+}
+.request-card,
+.product-card,
+.detail-info,
+.cart-item,
+.studio-notice,
+.settings-form small {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .quote-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .swap-graphic {
+    gap: clamp(10px, 3vw, 25px);
+  }
+  .hero-actions,
+  .hero-footnote,
+  .studio-top {
+    flex-wrap: wrap;
+  }
+  .filter-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .drawer input,
+  .drawer select,
+  .drawer textarea,
+  dialog input:not([type='checkbox']):not([type='radio']),
+  dialog select,
+  dialog textarea,
+  #product-form input,
+  #product-form select {
+    font-size: 16px;
+  }
 }

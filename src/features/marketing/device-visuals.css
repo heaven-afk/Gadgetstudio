@@ -297,6 +297,9 @@
   }
 }
 @media (max-width: 900px) {
+  .swap-feature {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .swap-gadgets {
     gap: 18px;
   }
@@ -313,12 +316,13 @@
 }
 @media (max-width: 600px) {
   .swap-gadgets {
-    gap: 16px;
+    gap: clamp(8px, 2vw, 16px);
     padding: 25px 5px 0;
   }
   .swap-device .device-phone {
-    width: 113px;
-    height: 225px;
+    width: clamp(76px, 24vw, 113px);
+    height: auto;
+    aspect-ratio: 113 / 225;
   }
   .swap-device > span {
     font-size: 6px;
@@ -326,6 +330,7 @@
   }
   .swap-device > p {
     font-size: 12px;
+    white-space: normal;
   }
   .swap-connection {
     gap: 3px;
